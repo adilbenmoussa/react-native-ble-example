@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectRootManager" version="2" project-jdk-name="RVM: ruby-2.7.4 [global]" project-jdk-type="RUBY_SDK" />
+  <component name="SbtLocalSettings">
+    <option name="projectSyncType">
+      <map>
+        <entry key="$USER_HOME$/Documents/development/connected-health/platform" value="PREVIEW" />
+        <entry key="$USER_HOME$/Documents/development/connected-health/platform-fe/platform/app/devicexs-ui" value="PREVIEW" />
+        <entry key="$USER_HOME$/Documents/development/connected-health/try-outs/akkahttp-quickstart" value="PREVIEW" />
+      </map>
+    </option>
+  </component>
+  <component name="ScalaSbtSettings">
+    <option name="customVMPath" />
+  </component>
+</project>

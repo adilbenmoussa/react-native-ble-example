@@ -1,0 +1,5 @@
+
+android/.DS_Store
+android/.gradle/*
+android/app/build/*
+node_modules/*
