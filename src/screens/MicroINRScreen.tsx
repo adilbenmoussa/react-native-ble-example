@@ -3,6 +3,8 @@ import {Button, FlatList, SafeAreaView, StatusBar, StyleSheet, Text, View} from 
 
 import {BleManager, Device} from 'react-native-ble-plx';
 
+const BLE_SUPPORTED_DEVICES = ['uINR_213644-0032', 'qLabsG0700048', 'ENVY 6000 series', 'LE-Bose QuietComfort 35'];
+
 const makeRandom = () => Math.floor(Math.random() * (1000000000000 + 1));
 
 const Separator = () => (
@@ -20,11 +22,11 @@ const MicroINRScreen = () => {
     const [connectionStatus, setConnectionStatus] = useState('');
     const [isScanning, setIsScanning] = useState(false);
     const [canConnect, setCanConnect] = useState(false);
-    const [isConnect, setIsConnect] = useState(false);
+    const [isConnected, setIsConnected] = useState(false);
     const [device, setDevice] = useState<Device | null >(null);
 
     useEffect(() => {
-        generateLogs()
+        // generateLogs()
     }, [])
 
     const generateLogs = () => {
@@ -33,7 +35,7 @@ const MicroINRScreen = () => {
             o.push(`Sensor checking... with id: ${i+1}`)
         }
 
-        setLogs(o);
+        // setLogs(o);
     }
 
     const isSensorTag = () => {
@@ -45,21 +47,30 @@ const MicroINRScreen = () => {
     }
 
     const clearLogs = () => {
-        // setLogs([]);
+        setLogs([]);
+        reset();
     }
 
+
+    const reset = () => {
+        setDevice(null);
+        setCanConnect(false);
+        stopScanning()
+    }
 
     /**
      * SCANNING
      */
     const stopScanning = () => {
+        setLogs(['Scanning stopped', ...logs]);
         setIsScanning(false);
-        setLogs(['Scanning stopped', ...logs])
+        manager.stopDeviceScan();
     }
 
     const startScanning = () => {
         setIsScanning(true);
-        setLogs(['Scanning initialized..., please turn on your microINR device', ...logs])
+        setLogs(['Scanning initialized..., please turn on your BLE device', ...logs])
+
 
         const subscription = manager.onStateChange((state) => {
             if (state === 'PoweredOn') {
@@ -76,25 +87,58 @@ const MicroINRScreen = () => {
                 return
             }
 
+            // console.log('device', device?.name);
+
             // Check if it is a device you are looking for based on advertisement data
             // or other criteria.
-            if (device && device.name === 'uINR_213644-0032') {
+            if (device && BLE_SUPPORTED_DEVICES.indexOf(`${device.name}`) > -1) {
                 setLogs([`Device ${device.name} found! Please press on connect button`, ...logs]);
                 setCanConnect(true);
                 setDevice(device);
 
                 // Stop scanning as it's not necessary if you are scanning for one device.
-                manager.stopDeviceScan();
-                setIsScanning(false);
+                stopScanning();
             }
 
         });
     }
 
+
+
     /**
-     * END SCANNING
+     * Start Device Connection
      */
 
+    function startConnecting() {
+        if (!device) {
+            setLogs([`Could not find a device to conneect with`, ...logs]);
+            return;
+        }
+
+        setLogs([`Connecting to device: ${device.name}`, ...logs]);
+
+        device.connect()
+            .then((device) => {
+                return device.discoverAllServicesAndCharacteristics()
+            })
+            .then((device) => {
+                // Do work on device with services and characteristics
+                setLogs([`Yohoo, device: ${device.name} is now connected!`, ...logs]);
+            })
+            .catch((error) => {
+                // Handle errors
+                setLogs([`Failed connecting to the device with error ${error}`, ...logs]);
+                reset();
+            });
+    }
+
+    function disconnect() {
+
+    }
+
+    /**
+     * END Connection
+     */
 
 
 
@@ -105,6 +149,7 @@ const MicroINRScreen = () => {
         } else {
             scanButton = <Button title={'Scan'} onPress={startScanning} />;
         }
+
         return (
             <View style={styles.headerContainer}>
                 <Text style={styles.textStyle} numberOfLines={1}>
@@ -116,13 +161,13 @@ const MicroINRScreen = () => {
                 <View style={styles.headerButtonsRow}>
                     <Button
                         disabled={!canConnect}
-                        onPress={() => {}}
+                        onPress={startConnecting}
                         title={'Connect'}
                     />
                     <VerticalSpace />
                     <Button
-                        disabled={!canConnect}
-                        onPress={() => {}}
+                        disabled={!canConnect && !isConnected}
+                        onPress={disconnect}
                         title={'Disconnect'}
                     />
                 </View>
@@ -155,7 +200,7 @@ const MicroINRScreen = () => {
                     onPress={() => {
                         clearLogs();
                     }}
-                    title={'Clear logs'}
+                    title={'Reset & Clear logs'}
                 />
             </View>
         );
